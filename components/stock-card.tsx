@@ -19,7 +19,8 @@ interface TSRPeriod {
 }
 
 interface StockData {
-  tsr: TSRPeriod[]
+  rollingTsr: TSRPeriod[]
+  toDateTsr: TSRPeriod[]
   sparkline: number[]
   currentPrice: number
   currency: string
@@ -104,15 +105,28 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
           )}
 
           {data && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <TrendingUp className="h-4 w-4" />
-                <span className="text-xs font-medium uppercase tracking-wider">TSR</span>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wider">TSR by 3m period</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {data.rollingTsr.map((item) => (
+                    <TSRBadge key={item.period} period={item.period} value={item.tsr} />
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                {data.tsr.map((item) => (
-                  <TSRBadge key={item.period} period={item.period} value={item.tsr} />
-                ))}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wider">TSR to-date</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {data.toDateTsr.map((item) => (
+                    <TSRBadge key={item.period} period={item.period} value={item.tsr} />
+                  ))}
+                </div>
               </div>
             </div>
           )}

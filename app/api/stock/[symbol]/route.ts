@@ -109,14 +109,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       }
     }
 
-    const periods = [
+    const rollingPeriods = [
       { label: "Mois 12-9", startMonths: 12, endMonths: 9 },
       { label: "Mois 9-6", startMonths: 9, endMonths: 6 },
       { label: "Mois 6-3", startMonths: 6, endMonths: 3 },
       { label: "Derniers 3 mois", startMonths: 3, endMonths: 0 },
     ]
 
-    const tsrData = periods.map(({ label, startMonths, endMonths }) => {
+    const rollingTsrData = rollingPeriods.map(({ label, startMonths, endMonths }) => {
       const startTimestamp = Math.floor(getDateNMonthsAgo(startMonths).getTime() / 1000)
       const startPrice = getClosestPrice(startTimestamp, timestamps, closes)
 
@@ -133,8 +133,27 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       }
     })
 
+    const toDatePeriods = [
+      { label: "1M", months: 1 },
+      { label: "3M", months: 3 },
+      { label: "6M", months: 6 },
+      { label: "1Y", months: 12 },
+    ]
+
+    const toDateTsrData = toDatePeriods.map(({ label, months }) => {
+      const targetTimestamp = Math.floor(getDateNMonthsAgo(months).getTime() / 1000)
+      const historicalPrice = getClosestPrice(targetTimestamp, timestamps, closes)
+      const tsr = calculateTSR(latestPrice, historicalPrice)
+
+      return {
+        period: label,
+        tsr: Math.round(tsr * 10) / 10,
+      }
+    })
+
     return NextResponse.json({
-      tsr: tsrData,
+      rollingTsr: rollingTsrData,
+      toDateTsr: toDateTsrData,
       sparkline: sparklineData,
       currentPrice: Math.round(latestPrice * 100) / 100,
       currency: result.meta.currency || "EUR",
