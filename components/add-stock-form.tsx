@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Plus, Search, Loader2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface SearchResult {
   symbol: string
@@ -18,9 +19,17 @@ interface SearchResult {
 
 interface AddStockFormProps {
   onAdd: (symbol: string, name: string) => void
+  collapsedClassName?: string
+  expandedClassName?: string
+  buttonClassName?: string
 }
 
-export function AddStockForm({ onAdd }: AddStockFormProps) {
+export function AddStockForm({
+  onAdd,
+  collapsedClassName,
+  expandedClassName,
+  buttonClassName,
+}: AddStockFormProps) {
   const [symbol, setSymbol] = useState("")
   const [name, setName] = useState("")
   const [isExpanded, setIsExpanded] = useState(false)
@@ -98,8 +107,8 @@ export function AddStockForm({ onAdd }: AddStockFormProps) {
 
   if (!isExpanded) {
     return (
-      <div className="flex justify-center">
-        <Button type="button" onClick={handleExpand} className="gap-2">
+      <div className={cn("flex justify-center", collapsedClassName)}>
+        <Button type="button" onClick={handleExpand} className={cn("gap-2", buttonClassName)}>
           <Plus className="h-4 w-4" />
           Ajouter une valeur à suivre
         </Button>
@@ -108,7 +117,7 @@ export function AddStockForm({ onAdd }: AddStockFormProps) {
   }
 
   return (
-    <Card className="bg-card border-border">
+    <Card className={cn("bg-card border-border", expandedClassName)}>
       <CardContent className="pt-6">
         <div className="flex justify-end mb-4">
           <Button type="button" variant="ghost" onClick={handleCollapse}>
