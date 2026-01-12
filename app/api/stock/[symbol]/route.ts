@@ -29,9 +29,11 @@ interface YahooQuoteSummaryResult {
     result?: Array<{
       summaryDetail?: {
         trailingPE?: number
+        forwardPE?: number
         beta?: number
         dividendRate?: number
         lastDividendValue?: number
+        trailingAnnualDividendRate?: number
       }
     }>
     error?: {
@@ -84,6 +86,11 @@ function getLatestClose(timestamps: number[], closes: number[]): number {
   throw new Error("No valid closing price found")
 }
 
+function normalizeMetric(value: number | undefined): number | null {
+  if (value == null || Number.isNaN(value)) return null
+  return value
+}
+
 export async function GET(request: Request, { params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params
 
@@ -115,16 +122,23 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       throw new Error(data.chart.error.description)
     }
 
-    let trailingPE: number | null = null
-    let beta: number | null = null
-    let dividend: number | null = null
+    let trailingPE: number | string = "N/A"
+    let beta: number | string = "N/A"
+    let dividend: number | string = "N/A"
 
     if (summaryResponse.ok) {
       const summaryData: YahooQuoteSummaryResult = await summaryResponse.json()
       const summaryDetail = summaryData.quoteSummary.result?.[0]?.summaryDetail
-      trailingPE = summaryDetail?.trailingPE ?? null
-      beta = summaryDetail?.beta ?? null
-      dividend = summaryDetail?.lastDividendValue ?? summaryDetail?.dividendRate ?? null
+      const peValue = normalizeMetric(summaryDetail?.trailingPE) ?? normalizeMetric(summaryDetail?.forwardPE)
+      const betaValue = normalizeMetric(summaryDetail?.beta)
+      const dividendValue =
+        normalizeMetric(summaryDetail?.dividendRate) ??
+        normalizeMetric(summaryDetail?.trailingAnnualDividendRate) ??
+        normalizeMetric(summaryDetail?.lastDividendValue)
+
+      trailingPE = peValue ?? "N/A"
+      beta = betaValue ?? "N/A"
+      dividend = dividendValue ?? "N/A"
     }
 
     const result = data.chart.result?.[0]

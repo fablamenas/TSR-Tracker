@@ -25,9 +25,9 @@ interface StockData {
   currentPrice: number
   currency: string
   fundamentals: {
-    trailingPE: number | null
-    beta: number | null
-    dividend: number | null
+    trailingPE: number | string
+    beta: number | string
+    dividend: number | string
   }
 }
 
@@ -58,62 +58,76 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
     }
   }
 
-  const formatNumber = (value: number | null, digits = 1) => {
-    if (value == null || Number.isNaN(value)) return "--"
+  const formatNumber = (value: number | string, digits = 1) => {
+    if (typeof value === "string" || value == null || Number.isNaN(value)) return "-"
     return value.toFixed(digits)
   }
 
-  const perBadgeClass = (value: number | null) => {
-    if (value == null || Number.isNaN(value)) return "border-border text-muted-foreground"
+  const perBadgeClass = (value: number | string) => {
+    if (typeof value === "string" || value == null || Number.isNaN(value)) return "border-border text-muted-foreground"
     if (value < 15) return "border-emerald-500/40 text-emerald-600"
     if (value > 25) return "border-orange-500/40 text-orange-600"
     return "border-border text-muted-foreground"
   }
 
+  const isNumberValue = (value: number | string) => typeof value === "number" && !Number.isNaN(value)
+
   return (
     <Card className="bg-card border-border overflow-hidden">
       <CardContent className="p-0">
         <div className="flex items-center justify-between p-4 border-b border-border/50">
-          <div className="flex items-center gap-4">
-            {/* Ticker and name */}
-            <div className="flex flex-col">
-              <span className="text-xl font-bold text-foreground tracking-tight">{symbol}</span>
-              <span className="text-sm text-muted-foreground truncate max-w-[180px]">{name}</span>
-            </div>
-
-            {/* Sparkline - Tendance 30j */}
-            {data && (
-              <div className="flex flex-col items-center gap-0.5 pl-4 border-l border-border/50">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">30j</span>
-                <Sparkline data={data.sparkline} />
-              </div>
-            )}
+          <div className="flex flex-col">
+            <span className="text-xl font-bold text-foreground tracking-tight">{name}</span>
+            <span className="text-sm text-muted-foreground">{symbol}</span>
           </div>
 
-          {/* Actions and price */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-3">
+              {data && (
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">30j</span>
+                    <Sparkline data={data.sparkline} />
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-semibold text-foreground">{data.currentPrice.toFixed(2)}</span>
+                    <span className="text-xs text-muted-foreground ml-1">{data.currency}</span>
+                  </div>
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => mutate()}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onRemove}
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
             {data && (
-              <div className="text-right mr-2">
-                <span className="text-lg font-semibold text-foreground">{data.currentPrice.toFixed(2)}</span>
-                <span className="text-xs text-muted-foreground ml-1">{data.currency}</span>
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <span className={`px-2 py-1 rounded-full border ${perBadgeClass(data.fundamentals.trailingPE)}`}>
+                  PER {formatNumber(data.fundamentals.trailingPE, 1)}
+                </span>
+                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground">
+                  β {formatNumber(data.fundamentals.beta, 2)}
+                </span>
+                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground">
+                  Div{" "}
+                  {isNumberValue(data.fundamentals.dividend)
+                    ? `${formatNumber(data.fundamentals.dividend, 2)}${currencySymbol(data.currency)}`
+                    : "-"}
+                </span>
               </div>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => mutate()}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onRemove}
-              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
           </div>
         </div>
 
@@ -136,20 +150,6 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
 
           {data && (
             <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                <span className={`px-2 py-1 rounded-full border ${perBadgeClass(data.fundamentals.trailingPE)}`}>
-                  PER {formatNumber(data.fundamentals.trailingPE, 1)}
-                </span>
-                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground">
-                  β {formatNumber(data.fundamentals.beta, 2)}
-                </span>
-                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground">
-                  Div{" "}
-                  {data.fundamentals.dividend == null || Number.isNaN(data.fundamentals.dividend)
-                    ? "--"
-                    : `${formatNumber(data.fundamentals.dividend, 2)}${currencySymbol(data.currency)}`}
-                </span>
-              </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <TrendingUp className="h-4 w-4" />
