@@ -43,6 +43,21 @@ interface YahooQuoteSummaryResult {
   }
 }
 
+interface FmpProfile {
+  pe?: number
+  peRatio?: number
+  beta?: number
+  lastDiv?: number
+  lastDividend?: number
+}
+
+interface FmpResult {
+  profile: FmpProfile | null
+  status: number | null
+  hasApiKey: boolean
+  requestUrl: string | null
+}
+
 function getDateNMonthsAgo(n: number): Date {
   const date = new Date()
   date.setMonth(date.getMonth() - n)
@@ -96,8 +111,48 @@ function normalizeDividend(value: number | undefined): number | null {
   return value
 }
 
+async function fetchFmpFundamentals(symbol: string, apiKey: string | null): Promise<FmpResult> {
+  if (!apiKey) {
+    console.info("[stocks] FMP_API_KEY missing, skipping FMP lookup")
+    return { profile: null, status: null, hasApiKey: false, requestUrl: null }
+  }
+
+  console.info("[stocks] FMP lookup start", { symbol, hasApiKey: apiKey.length > 0 })
+
+  const url = `https://financialmodelingprep.com/stable/profile?symbol=${encodeURIComponent(
+    symbol,
+  )}&apikey=${apiKey}`
+  const maskedUrl = url.replace(apiKey, "REDACTED")
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    },
+  })
+
+  console.info("[stocks] FMP response received", {
+    symbol,
+    status: response.status,
+    ok: response.ok,
+    url: maskedUrl,
+  })
+
+  if (!response.ok) {
+    console.info("[stocks] FMP response not ok", { symbol, status: response.status, url: maskedUrl })
+    return { profile: null, status: response.status, hasApiKey: true, requestUrl: maskedUrl }
+  }
+
+  const data = (await response.json()) as FmpProfile[]
+  console.info("[stocks] FMP payload parsed", { symbol, count: data.length, url: maskedUrl })
+  return { profile: data[0] ?? null, status: response.status, hasApiKey: true, requestUrl: maskedUrl }
+}
+
 export async function GET(request: Request, { params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params
+  const requestUrl = new URL(request.url)
+  const overrideApiKey = requestUrl.searchParams.get("fmpKey")
+  const apiKey = overrideApiKey ?? process.env.FMP_API_KEY ?? null
+  const fallbackApiKey = "TSyoaKhtZm1Ah04imFys3CfFbGpTnZs1"
+  const resolvedApiKey = apiKey ?? fallbackApiKey
 
   try {
     // Fetch 1 year of data for rolling quarterly periods
@@ -130,6 +185,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
     let trailingPE: number | string = "N/A"
     let beta: number | string = "N/A"
     let dividend: number | string = "N/A"
+    let fundamentalsSource: "yahoo" | "fmp" = "yahoo"
 
     if (summaryResponse.ok) {
       const summaryData: YahooQuoteSummaryResult = await summaryResponse.json()
@@ -145,6 +201,35 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       beta = betaValue ?? "N/A"
       dividend = dividendValue ?? "N/A"
     }
+
+    if (overrideApiKey) {
+      console.info("[stocks] FMP API key override used via query param")
+    }
+    if (!apiKey) {
+      console.info("[stocks] FMP API key fallback used from code")
+    }
+    const fmpResult = await fetchFmpFundamentals(symbol, resolvedApiKey)
+    if (fmpResult.profile) {
+      const fmpPe = normalizeMetric(fmpResult.profile.pe ?? fmpResult.profile.peRatio)
+      const fmpBeta = normalizeMetric(fmpResult.profile.beta)
+      const fmpDividend = normalizeDividend(fmpResult.profile.lastDividend ?? fmpResult.profile.lastDiv)
+
+      trailingPE = fmpPe ?? trailingPE
+      beta = fmpBeta ?? beta
+      dividend = fmpDividend ?? dividend
+
+      fundamentalsSource = "fmp"
+    }
+
+    console.info("[stocks] Fundamentals debug", {
+      symbol,
+      fundamentalsSource,
+      yahoo: { trailingPE, beta, dividend },
+      fmpStatus: fmpResult.status,
+      fmpProfile: fmpResult.profile,
+      fmpHasApiKey: fmpResult.hasApiKey,
+      fmpRequestUrl: fmpResult.requestUrl,
+    })
 
     const result = data.chart.result?.[0]
     if (!result || !result.timestamp || !result.indicators.quote[0]) {
@@ -217,6 +302,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
         trailingPE,
         beta,
         dividend,
+      },
+      debug: {
+        fundamentalsSource,
+        fmpStatus: fmpResult.status,
+        fmpProfile: fmpResult.profile,
+        fmpUrl: "https://financialmodelingprep.com/stable/profile?symbol=SYMBOL&apikey=REDACTED",
+        fmpHasApiKey: fmpResult.hasApiKey,
+        fmpRequestUrl: fmpResult.requestUrl,
       },
     })
   } catch (error) {

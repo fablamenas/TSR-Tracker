@@ -29,14 +29,42 @@ interface StockData {
     beta: number | string
     dividend: number | string
   }
+  debug?: {
+    fundamentalsSource: "yahoo" | "fmp"
+    fmpStatus: number | null
+    fmpProfile: {
+      pe?: number
+      peRatio?: number
+      beta?: number
+      lastDiv?: number
+      lastDividend?: number
+    } | null
+    fmpUrl: string
+    fmpHasApiKey: boolean
+    fmpRequestUrl: string | null
+  }
 }
 
 async function fetchStockData(symbol: string): Promise<StockData> {
-  const response = await fetch(`/api/stock/${encodeURIComponent(symbol)}`)
+  const queryParams = new URLSearchParams()
+  if (typeof window !== "undefined") {
+    const pageParams = new URLSearchParams(window.location.search)
+    const fmpKey = pageParams.get("fmpKey")
+    if (fmpKey) {
+      queryParams.set("fmpKey", fmpKey)
+    }
+  }
+
+  const queryString = queryParams.toString()
+  const response = await fetch(`/api/stock/${encodeURIComponent(symbol)}${queryString ? `?${queryString}` : ""}`)
   if (!response.ok) {
     throw new Error("Erreur lors de la récupération des données")
   }
-  return response.json()
+  const data = (await response.json()) as StockData
+  if (data.debug) {
+    console.info("[stocks] API debug", { symbol, ...data.debug })
+  }
+  return data
 }
 
 export function StockCard({ symbol, name, onRemove }: StockCardProps) {
