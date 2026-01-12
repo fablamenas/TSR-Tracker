@@ -114,21 +114,32 @@ async function fetchFmpFundamentals(symbol: string): Promise<FmpResult> {
     return { profile: null, status: null }
   }
 
+  console.info("[stocks] FMP lookup start", { symbol, hasApiKey: apiKey.length > 0 })
+
   const url = `https://financialmodelingprep.com/stable/profile?symbol=${encodeURIComponent(
     symbol,
   )}&apikey=${apiKey}`
+  const maskedUrl = url.replace(apiKey, "REDACTED")
   const response = await fetch(url, {
     headers: {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     },
   })
 
+  console.info("[stocks] FMP response received", {
+    symbol,
+    status: response.status,
+    ok: response.ok,
+    url: maskedUrl,
+  })
+
   if (!response.ok) {
-    console.info("[stocks] FMP response not ok", { symbol, status: response.status })
+    console.info("[stocks] FMP response not ok", { symbol, status: response.status, url: maskedUrl })
     return { profile: null, status: response.status }
   }
 
   const data = (await response.json()) as FmpProfile[]
+  console.info("[stocks] FMP payload parsed", { symbol, count: data.length, url: maskedUrl })
   return { profile: data[0] ?? null, status: response.status }
 }
 
@@ -280,6 +291,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
         fundamentalsSource,
         fmpStatus: fmpResult.status,
         fmpProfile: fmpResult.profile,
+        fmpUrl: "https://financialmodelingprep.com/stable/profile?symbol=SYMBOL&apikey=REDACTED",
       },
     })
   } catch (error) {

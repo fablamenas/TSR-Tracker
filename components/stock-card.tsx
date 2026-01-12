@@ -37,6 +37,7 @@ interface StockData {
       beta?: number
       lastDiv?: number
     } | null
+    fmpUrl: string
   }
 }
 
