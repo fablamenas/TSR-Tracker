@@ -111,8 +111,7 @@ function normalizeDividend(value: number | undefined): number | null {
   return value
 }
 
-async function fetchFmpFundamentals(symbol: string): Promise<FmpResult> {
-  const apiKey = process.env.FMP_API_KEY
+async function fetchFmpFundamentals(symbol: string, apiKey: string | null): Promise<FmpResult> {
   if (!apiKey) {
     console.info("[stocks] FMP_API_KEY missing, skipping FMP lookup")
     return { profile: null, status: null, hasApiKey: false, requestUrl: null }
@@ -149,6 +148,9 @@ async function fetchFmpFundamentals(symbol: string): Promise<FmpResult> {
 
 export async function GET(request: Request, { params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params
+  const requestUrl = new URL(request.url)
+  const overrideApiKey = requestUrl.searchParams.get("fmpKey")
+  const apiKey = overrideApiKey ?? process.env.FMP_API_KEY ?? null
 
   try {
     // Fetch 1 year of data for rolling quarterly periods
@@ -198,7 +200,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       dividend = dividendValue ?? "N/A"
     }
 
-    const fmpResult = await fetchFmpFundamentals(symbol)
+    if (overrideApiKey) {
+      console.info("[stocks] FMP API key override used via query param")
+    }
+    const fmpResult = await fetchFmpFundamentals(symbol, apiKey)
     if (fmpResult.profile) {
       const fmpPe = normalizeMetric(fmpResult.profile.pe ?? fmpResult.profile.peRatio)
       const fmpBeta = normalizeMetric(fmpResult.profile.beta)
