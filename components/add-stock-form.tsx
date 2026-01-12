@@ -23,6 +23,7 @@ interface AddStockFormProps {
 export function AddStockForm({ onAdd }: AddStockFormProps) {
   const [symbol, setSymbol] = useState("")
   const [name, setName] = useState("")
+  const [isExpanded, setIsExpanded] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -78,12 +79,42 @@ export function AddStockForm({ onAdd }: AddStockFormProps) {
       setSymbol("")
       setName("")
       setSearchQuery("")
+      setSearchResults([])
+      setShowResults(false)
+      setIsExpanded(false)
     }
+  }
+
+  const handleExpand = () => {
+    setIsExpanded(true)
+  }
+
+  const handleCollapse = () => {
+    setIsExpanded(false)
+    setSearchQuery("")
+    setSearchResults([])
+    setShowResults(false)
+  }
+
+  if (!isExpanded) {
+    return (
+      <div className="flex justify-center">
+        <Button type="button" onClick={handleExpand} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Ajouter une valeur à suivre
+        </Button>
+      </div>
+    )
   }
 
   return (
     <Card className="bg-card border-border">
       <CardContent className="pt-6">
+        <div className="flex justify-end mb-4">
+          <Button type="button" variant="ghost" onClick={handleCollapse}>
+            Réduire
+          </Button>
+        </div>
         <div className="relative mb-4" ref={searchRef}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
