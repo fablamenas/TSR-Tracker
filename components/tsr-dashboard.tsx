@@ -61,7 +61,7 @@ export function TSRDashboard() {
           <h1 className="text-3xl font-bold text-foreground">TSR Tracker</h1>
         </div>
         <p className="text-muted-foreground">
-          Suivez le Total Shareholder Return (TSR) de vos actions sur 1, 3, 6 et 12 mois
+          Analysez le Total Shareholder Return (TSR) avec un découpage trimestriel glissant sur 12 mois
         </p>
       </header>
 

@@ -9,6 +9,14 @@ interface TSRBadgeProps {
 
 export function TSRBadge({ period, value }: TSRBadgeProps) {
   const isPositive = value >= 0
+  const isStrongMove = Math.abs(value) > 10
+  const badgeClass = isPositive
+    ? isStrongMove
+      ? "bg-emerald-600 text-white"
+      : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+    : isStrongMove
+      ? "bg-red-600 text-white"
+      : "bg-red-500/20 text-red-700 dark:text-red-300"
 
   return (
     <div className="flex flex-col items-center gap-1">
@@ -16,9 +24,7 @@ export function TSRBadge({ period, value }: TSRBadgeProps) {
       <span
         className={cn(
           "px-2.5 py-1 rounded-full text-sm font-semibold min-w-[70px] text-center",
-          isPositive
-            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-            : "bg-red-500/15 text-red-600 dark:text-red-400",
+          badgeClass,
         )}
       >
         {isPositive ? "+" : ""}
