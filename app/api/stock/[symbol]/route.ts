@@ -91,6 +91,11 @@ function normalizeMetric(value: number | undefined): number | null {
   return value
 }
 
+function normalizeDividend(value: number | undefined): number | null {
+  if (value == null || Number.isNaN(value) || value === 0) return null
+  return value
+}
+
 export async function GET(request: Request, { params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params
 
@@ -132,9 +137,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       const peValue = normalizeMetric(summaryDetail?.trailingPE) ?? normalizeMetric(summaryDetail?.forwardPE)
       const betaValue = normalizeMetric(summaryDetail?.beta)
       const dividendValue =
-        normalizeMetric(summaryDetail?.dividendRate) ??
-        normalizeMetric(summaryDetail?.trailingAnnualDividendRate) ??
-        normalizeMetric(summaryDetail?.lastDividendValue)
+        normalizeDividend(summaryDetail?.dividendRate) ??
+        normalizeDividend(summaryDetail?.trailingAnnualDividendRate) ??
+        normalizeDividend(summaryDetail?.lastDividendValue)
 
       trailingPE = peValue ?? "N/A"
       beta = betaValue ?? "N/A"

@@ -75,14 +75,14 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
   return (
     <Card className="bg-card border-border overflow-hidden">
       <CardContent className="p-0">
-        <div className="flex items-start justify-between p-4 border-b border-border/50 gap-4">
-          <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between p-4 border-b border-border/50 gap-4">
+          <div className="flex items-center gap-6">
             <div className="flex flex-col">
               <span className="text-xl font-bold text-foreground tracking-tight">{name}</span>
               <span className="text-sm text-muted-foreground">{symbol}</span>
             </div>
             {data && (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <div className="text-left">
                   <span className="text-lg font-semibold text-foreground">{data.currentPrice.toFixed(2)}</span>
                   <span className="text-xs text-muted-foreground ml-1">{data.currency}</span>
@@ -95,8 +95,24 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
             )}
           </div>
 
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            {data && (
+              <div className="flex items-center justify-end gap-2 text-[11px] text-muted-foreground">
+                <span className={`px-2 py-1 rounded-full border ${perBadgeClass(data.fundamentals.trailingPE)}`}>
+                  PER {formatNumber(data.fundamentals.trailingPE, 1)}
+                </span>
+                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground">
+                  β {formatNumber(data.fundamentals.beta, 2)}
+                </span>
+                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground">
+                  Div{" "}
+                  {isNumberValue(data.fundamentals.dividend)
+                    ? `${formatNumber(data.fundamentals.dividend, 2)}${currencySymbol(data.currency)}`
+                    : "-"}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
@@ -114,22 +130,6 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
-            {data && (
-              <div className="flex items-center justify-end gap-2 text-[11px] text-muted-foreground">
-                <span className={`px-2 py-1 rounded-full border ${perBadgeClass(data.fundamentals.trailingPE)}`}>
-                  PER {formatNumber(data.fundamentals.trailingPE, 1)}
-                </span>
-                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground">
-                  β {formatNumber(data.fundamentals.beta, 2)}
-                </span>
-                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground">
-                  Div{" "}
-                  {isNumberValue(data.fundamentals.dividend)
-                    ? `${formatNumber(data.fundamentals.dividend, 2)}${currencySymbol(data.currency)}`
-                    : "-"}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
