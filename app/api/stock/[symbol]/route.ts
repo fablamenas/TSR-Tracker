@@ -185,6 +185,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
     let trailingPE: number | string = "N/A"
     let beta: number | string = "N/A"
     let dividend: number | string = "N/A"
+    let dividendYield: number | string = "N/A"
     let fundamentalsSource: "yahoo" | "fmp" = "yahoo"
 
     if (summaryResponse.ok) {
@@ -241,6 +242,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
     const currentPrice = result.meta.regularMarketPrice
     const latestClose = getLatestClose(timestamps, closes)
     const latestPrice = Number.isFinite(currentPrice) ? currentPrice : latestClose
+    if (typeof dividend === "number" && Number.isFinite(latestPrice) && latestPrice > 0) {
+      dividendYield = (dividend / latestPrice) * 100
+    }
 
     const thirtyDaysAgo = Math.floor(getDateNMonthsAgo(1).getTime() / 1000)
     const sparklineData: number[] = []
@@ -299,7 +303,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       currentPrice: Math.round(latestPrice * 100) / 100,
       currency: result.meta.currency || "EUR",
       fundamentals: {
-        trailingPE,
+        dividendYield,
         beta,
         dividend,
       },

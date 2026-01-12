@@ -25,7 +25,7 @@ interface StockData {
   currentPrice: number
   currency: string
   fundamentals: {
-    trailingPE: number | string
+    dividendYield: number | string
     beta: number | string
     dividend: number | string
   }
@@ -91,10 +91,10 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
     return value.toFixed(digits)
   }
 
-  const perBadgeClass = (value: number | string) => {
+  const dividendYieldBadgeClass = (value: number | string) => {
     if (typeof value === "string" || value == null || Number.isNaN(value)) return "border-border text-muted-foreground"
-    if (value < 15) return "border-emerald-500/40 text-emerald-600"
-    if (value > 25) return "border-orange-500/40 text-orange-600"
+    if (value >= 4) return "border-emerald-500/40 text-emerald-600"
+    if (value <= 1) return "border-orange-500/40 text-orange-600"
     return "border-border text-muted-foreground"
   }
 
@@ -126,17 +126,26 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
           <div className="flex items-center gap-4">
             {data && (
               <div className="flex items-center justify-end gap-2 text-[11px] text-muted-foreground">
-                <span className={`px-2 py-1 rounded-full border ${perBadgeClass(data.fundamentals.trailingPE)}`}>
-                  PER {formatNumber(data.fundamentals.trailingPE, 1)}
-                </span>
-                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground">
-                  β {formatNumber(data.fundamentals.beta, 2)}
-                </span>
-                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground">
+                <span
+                  className="px-2 py-1 rounded-full border border-border text-muted-foreground"
+                  title="Dividende annuel par action"
+                >
                   Div{" "}
                   {isNumberValue(data.fundamentals.dividend)
                     ? `${formatNumber(data.fundamentals.dividend, 2)}${currencySymbol(data.currency)}`
                     : "-"}
+                </span>
+                <span
+                  className={`px-2 py-1 rounded-full border ${dividendYieldBadgeClass(data.fundamentals.dividendYield)}`}
+                  title="Dividend yield (dividende annuel / cours) en %"
+                >
+                  Yield{" "}
+                  {isNumberValue(data.fundamentals.dividendYield)
+                    ? `${formatNumber(data.fundamentals.dividendYield, 2)}%`
+                    : "-"}
+                </span>
+                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground" title="Bêta">
+                  β {formatNumber(data.fundamentals.beta, 2)}
                 </span>
               </div>
             )}
