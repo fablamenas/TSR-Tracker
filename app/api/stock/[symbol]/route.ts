@@ -43,6 +43,12 @@ interface YahooQuoteSummaryResult {
   }
 }
 
+interface FmpProfile {
+  pe?: number
+  beta?: number
+  lastDiv?: number
+}
+
 function getDateNMonthsAgo(n: number): Date {
   const date = new Date()
   date.setMonth(date.getMonth() - n)
@@ -96,6 +102,23 @@ function normalizeDividend(value: number | undefined): number | null {
   return value
 }
 
+async function fetchFmpFundamentals(symbol: string): Promise<FmpProfile | null> {
+  const apiKey = process.env.FMP_API_KEY
+  if (!apiKey) return null
+
+  const url = `https://financialmodelingprep.com/api/v3/profile/${encodeURIComponent(symbol)}?apikey=${apiKey}`
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    },
+  })
+
+  if (!response.ok) return null
+
+  const data = (await response.json()) as FmpProfile[]
+  return data[0] ?? null
+}
+
 export async function GET(request: Request, { params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params
 
@@ -144,6 +167,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       trailingPE = peValue ?? "N/A"
       beta = betaValue ?? "N/A"
       dividend = dividendValue ?? "N/A"
+    }
+
+    if (trailingPE === "N/A" || beta === "N/A" || dividend === "N/A") {
+      const fmpProfile = await fetchFmpFundamentals(symbol)
+      if (fmpProfile) {
+        if (trailingPE === "N/A") {
+          trailingPE = normalizeMetric(fmpProfile.pe) ?? "N/A"
+        }
+        if (beta === "N/A") {
+          beta = normalizeMetric(fmpProfile.beta) ?? "N/A"
+        }
+        if (dividend === "N/A") {
+          dividend = normalizeDividend(fmpProfile.lastDiv) ?? "N/A"
+        }
+      }
     }
 
     const result = data.chart.result?.[0]
