@@ -151,6 +151,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
   const requestUrl = new URL(request.url)
   const overrideApiKey = requestUrl.searchParams.get("fmpKey")
   const apiKey = overrideApiKey ?? process.env.FMP_API_KEY ?? null
+  const fallbackApiKey = "TSyoaKhtZm1Ah04imFys3CfFbGpTnZs1"
+  const resolvedApiKey = apiKey ?? fallbackApiKey
 
   try {
     // Fetch 1 year of data for rolling quarterly periods
@@ -203,7 +205,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
     if (overrideApiKey) {
       console.info("[stocks] FMP API key override used via query param")
     }
-    const fmpResult = await fetchFmpFundamentals(symbol, apiKey)
+    if (!apiKey) {
+      console.info("[stocks] FMP API key fallback used from code")
+    }
+    const fmpResult = await fetchFmpFundamentals(symbol, resolvedApiKey)
     if (fmpResult.profile) {
       const fmpPe = normalizeMetric(fmpResult.profile.pe ?? fmpResult.profile.peRatio)
       const fmpBeta = normalizeMetric(fmpResult.profile.beta)
