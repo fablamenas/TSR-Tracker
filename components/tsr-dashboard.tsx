@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { StockCard } from "./stock-card"
 import { AddStockForm } from "./add-stock-form"
 import { TrendingUp } from "lucide-react"
@@ -17,8 +17,29 @@ const initialStocks: Stock[] = [
   { symbol: "EXA.PA", name: "EXAIL Technologies" },
 ]
 
+const storageKey = "tsr-tracker:stocks"
+
 export function TSRDashboard() {
   const [stocks, setStocks] = useState<Stock[]>(initialStocks)
+
+  useEffect(() => {
+    const stored = localStorage.getItem(storageKey)
+    if (!stored) {
+      return
+    }
+    try {
+      const parsed = JSON.parse(stored) as Stock[]
+      if (Array.isArray(parsed)) {
+        setStocks(parsed)
+      }
+    } catch (error) {
+      console.warn("Failed to load saved stocks:", error)
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(stocks))
+  }, [stocks])
 
   const addStock = (symbol: string, name: string) => {
     if (!stocks.find((s) => s.symbol.toUpperCase() === symbol.toUpperCase())) {
