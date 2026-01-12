@@ -38,6 +38,8 @@ interface StockData {
       lastDiv?: number
     } | null
     fmpUrl: string
+    fmpHasApiKey: boolean
+    fmpRequestUrl: string | null
   }
 }
 

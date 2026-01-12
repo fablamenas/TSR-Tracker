@@ -52,6 +52,8 @@ interface FmpProfile {
 interface FmpResult {
   profile: FmpProfile | null
   status: number | null
+  hasApiKey: boolean
+  requestUrl: string | null
 }
 
 function getDateNMonthsAgo(n: number): Date {
@@ -111,7 +113,7 @@ async function fetchFmpFundamentals(symbol: string): Promise<FmpResult> {
   const apiKey = process.env.FMP_API_KEY
   if (!apiKey) {
     console.info("[stocks] FMP_API_KEY missing, skipping FMP lookup")
-    return { profile: null, status: null }
+    return { profile: null, status: null, hasApiKey: false, requestUrl: null }
   }
 
   console.info("[stocks] FMP lookup start", { symbol, hasApiKey: apiKey.length > 0 })
@@ -135,12 +137,12 @@ async function fetchFmpFundamentals(symbol: string): Promise<FmpResult> {
 
   if (!response.ok) {
     console.info("[stocks] FMP response not ok", { symbol, status: response.status, url: maskedUrl })
-    return { profile: null, status: response.status }
+    return { profile: null, status: response.status, hasApiKey: true, requestUrl: maskedUrl }
   }
 
   const data = (await response.json()) as FmpProfile[]
   console.info("[stocks] FMP payload parsed", { symbol, count: data.length, url: maskedUrl })
-  return { profile: data[0] ?? null, status: response.status }
+  return { profile: data[0] ?? null, status: response.status, hasApiKey: true, requestUrl: maskedUrl }
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ symbol: string }> }) {
@@ -213,6 +215,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       yahoo: { trailingPE, beta, dividend },
       fmpStatus: fmpResult.status,
       fmpProfile: fmpResult.profile,
+      fmpHasApiKey: fmpResult.hasApiKey,
+      fmpRequestUrl: fmpResult.requestUrl,
     })
 
     const result = data.chart.result?.[0]
@@ -292,6 +296,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
         fmpStatus: fmpResult.status,
         fmpProfile: fmpResult.profile,
         fmpUrl: "https://financialmodelingprep.com/stable/profile?symbol=SYMBOL&apikey=REDACTED",
+        fmpHasApiKey: fmpResult.hasApiKey,
+        fmpRequestUrl: fmpResult.requestUrl,
       },
     })
   } catch (error) {
