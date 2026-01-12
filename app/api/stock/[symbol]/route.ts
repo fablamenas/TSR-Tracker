@@ -30,20 +30,49 @@ function getDateNMonthsAgo(n: number): Date {
   return date
 }
 
-function calculateTSR(currentPrice: number, historicalPrice: number): number {
-  if (historicalPrice === 0) return 0
-  return ((currentPrice - historicalPrice) / historicalPrice) * 100
+function calculateTSR(endPrice: number, startPrice: number): number {
+  if (startPrice === 0) return 0
+  return ((endPrice - startPrice) / startPrice) * 100
+}
+
+function getClosestPrice(targetTimestamp: number, timestamps: number[], closes: number[]): number {
+  let closestIndex = -1
+  let minDiff = Infinity
+
+  for (let i = 0; i < timestamps.length; i++) {
+    const close = closes[i]
+    if (close == null) continue
+    const diff = Math.abs(timestamps[i] - targetTimestamp)
+    if (diff < minDiff) {
+      minDiff = diff
+      closestIndex = i
+    }
+  }
+
+  if (closestIndex === -1) {
+    throw new Error("No valid price found for target date")
+  }
+
+  return closes[closestIndex]
+}
+
+function getLatestClose(timestamps: number[], closes: number[]): number {
+  for (let i = timestamps.length - 1; i >= 0; i--) {
+    const close = closes[i]
+    if (close != null) {
+      return close
+    }
+  }
+
+  throw new Error("No valid closing price found")
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params
 
   try {
-    // Fetch 13 months of data to ensure we have enough history
-    const endDate = Math.floor(Date.now() / 1000)
-    const startDate = Math.floor(getDateNMonthsAgo(13).getTime() / 1000)
-
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${startDate}&period2=${endDate}&interval=1d&events=div`
+    // Fetch 1 year of data for rolling quarterly periods
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1y&interval=1d&events=div`
 
     const response = await fetch(url, {
       headers: {
@@ -69,6 +98,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
     const timestamps = result.timestamp
     const closes = result.indicators.adjclose?.[0]?.adjclose || result.indicators.quote[0].close
     const currentPrice = result.meta.regularMarketPrice
+    const latestClose = getLatestClose(timestamps, closes)
+    const latestPrice = Number.isFinite(currentPrice) ? currentPrice : latestClose
 
     const thirtyDaysAgo = Math.floor(getDateNMonthsAgo(1).getTime() / 1000)
     const sparklineData: number[] = []
@@ -78,32 +109,23 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       }
     }
 
-    // Find prices at different periods
     const periods = [
-      { months: 1, label: "1M" },
-      { months: 3, label: "3M" },
-      { months: 6, label: "6M" },
-      { months: 12, label: "1Y" },
+      { label: "Mois 12-9", startMonths: 12, endMonths: 9 },
+      { label: "Mois 9-6", startMonths: 9, endMonths: 6 },
+      { label: "Mois 6-3", startMonths: 6, endMonths: 3 },
+      { label: "Derniers 3 mois", startMonths: 3, endMonths: 0 },
     ]
 
-    const tsrData = periods.map(({ months, label }) => {
-      const targetDate = getDateNMonthsAgo(months)
-      const targetTimestamp = Math.floor(targetDate.getTime() / 1000)
+    const tsrData = periods.map(({ label, startMonths, endMonths }) => {
+      const startTimestamp = Math.floor(getDateNMonthsAgo(startMonths).getTime() / 1000)
+      const startPrice = getClosestPrice(startTimestamp, timestamps, closes)
 
-      // Find the closest available date
-      let closestIndex = 0
-      let minDiff = Math.abs(timestamps[0] - targetTimestamp)
+      const endPrice =
+        endMonths === 0
+          ? latestPrice
+          : getClosestPrice(Math.floor(getDateNMonthsAgo(endMonths).getTime() / 1000), timestamps, closes)
 
-      for (let i = 1; i < timestamps.length; i++) {
-        const diff = Math.abs(timestamps[i] - targetTimestamp)
-        if (diff < minDiff) {
-          minDiff = diff
-          closestIndex = i
-        }
-      }
-
-      const historicalPrice = closes[closestIndex]
-      const tsr = calculateTSR(currentPrice, historicalPrice)
+      const tsr = calculateTSR(endPrice, startPrice)
 
       return {
         period: label,
@@ -114,7 +136,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
     return NextResponse.json({
       tsr: tsrData,
       sparkline: sparklineData,
-      currentPrice: Math.round(currentPrice * 100) / 100,
+      currentPrice: Math.round(latestPrice * 100) / 100,
       currency: result.meta.currency || "EUR",
     })
   } catch (error) {
