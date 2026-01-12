@@ -34,8 +34,10 @@ interface StockData {
     fmpStatus: number | null
     fmpProfile: {
       pe?: number
+      peRatio?: number
       beta?: number
       lastDiv?: number
+      lastDividend?: number
     } | null
     fmpUrl: string
     fmpHasApiKey: boolean

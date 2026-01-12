@@ -45,8 +45,10 @@ interface YahooQuoteSummaryResult {
 
 interface FmpProfile {
   pe?: number
+  peRatio?: number
   beta?: number
   lastDiv?: number
+  lastDividend?: number
 }
 
 interface FmpResult {
@@ -198,9 +200,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
 
     const fmpResult = await fetchFmpFundamentals(symbol)
     if (fmpResult.profile) {
-      const fmpPe = normalizeMetric(fmpResult.profile.pe)
+      const fmpPe = normalizeMetric(fmpResult.profile.pe ?? fmpResult.profile.peRatio)
       const fmpBeta = normalizeMetric(fmpResult.profile.beta)
-      const fmpDividend = normalizeDividend(fmpResult.profile.lastDiv)
+      const fmpDividend = normalizeDividend(fmpResult.profile.lastDividend ?? fmpResult.profile.lastDiv)
 
       trailingPE = fmpPe ?? trailingPE
       beta = fmpBeta ?? beta
