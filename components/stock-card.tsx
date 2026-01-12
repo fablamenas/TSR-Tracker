@@ -46,7 +46,17 @@ interface StockData {
 }
 
 async function fetchStockData(symbol: string): Promise<StockData> {
-  const response = await fetch(`/api/stock/${encodeURIComponent(symbol)}`)
+  const queryParams = new URLSearchParams()
+  if (typeof window !== "undefined") {
+    const pageParams = new URLSearchParams(window.location.search)
+    const fmpKey = pageParams.get("fmpKey")
+    if (fmpKey) {
+      queryParams.set("fmpKey", fmpKey)
+    }
+  }
+
+  const queryString = queryParams.toString()
+  const response = await fetch(`/api/stock/${encodeURIComponent(symbol)}${queryString ? `?${queryString}` : ""}`)
   if (!response.ok) {
     throw new Error("Erreur lors de la récupération des données")
   }
