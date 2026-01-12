@@ -75,26 +75,28 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
   return (
     <Card className="bg-card border-border overflow-hidden">
       <CardContent className="p-0">
-        <div className="flex items-center justify-between p-4 border-b border-border/50">
-          <div className="flex flex-col">
-            <span className="text-xl font-bold text-foreground tracking-tight">{name}</span>
-            <span className="text-sm text-muted-foreground">{symbol}</span>
+        <div className="flex items-start justify-between p-4 border-b border-border/50 gap-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col">
+              <span className="text-xl font-bold text-foreground tracking-tight">{name}</span>
+              <span className="text-sm text-muted-foreground">{symbol}</span>
+            </div>
+            {data && (
+              <div className="flex items-center gap-3">
+                <div className="text-left">
+                  <span className="text-lg font-semibold text-foreground">{data.currentPrice.toFixed(2)}</span>
+                  <span className="text-xs text-muted-foreground ml-1">{data.currency}</span>
+                </div>
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">30j</span>
+                  <Sparkline data={data.sparkline} />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-3">
-              {data && (
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col items-center gap-0.5">
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">30j</span>
-                    <Sparkline data={data.sparkline} />
-                  </div>
-                  <div className="text-right">
-                    <span className="text-lg font-semibold text-foreground">{data.currentPrice.toFixed(2)}</span>
-                    <span className="text-xs text-muted-foreground ml-1">{data.currency}</span>
-                  </div>
-                </div>
-              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -113,7 +115,7 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
               </Button>
             </div>
             {data && (
-              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <div className="flex items-center justify-end gap-2 text-[11px] text-muted-foreground">
                 <span className={`px-2 py-1 rounded-full border ${perBadgeClass(data.fundamentals.trailingPE)}`}>
                   PER {formatNumber(data.fundamentals.trailingPE, 1)}
                 </span>
