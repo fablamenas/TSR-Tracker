@@ -53,19 +53,20 @@ export function TSRDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <header className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-primary rounded-lg">
-            <TrendingUp className="h-6 w-6 text-primary-foreground" />
+      <header className="mb-8 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary rounded-lg">
+              <TrendingUp className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <h1 className="text-3xl font-bold text-foreground">TSR Tracker</h1>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">TSR Tracker</h1>
+          <AddStockForm onAdd={addStock} collapsedClassName="flex" expandedClassName="w-full" />
         </div>
         <p className="text-muted-foreground">
           Analysez le Total Shareholder Return (TSR) avec un découpage trimestriel glissant sur 12 mois
         </p>
       </header>
-
-      <AddStockForm onAdd={addStock} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
         {stocks.map((stock) => (
