@@ -106,7 +106,9 @@ async function fetchFmpFundamentals(symbol: string): Promise<FmpProfile | null> 
   const apiKey = process.env.FMP_API_KEY
   if (!apiKey) return null
 
-  const url = `https://financialmodelingprep.com/api/v3/profile/${encodeURIComponent(symbol)}?apikey=${apiKey}`
+  const url = `https://financialmodelingprep.com/stable/profile?symbol=${encodeURIComponent(
+    symbol,
+  )}&apikey=${apiKey}`
   const response = await fetch(url, {
     headers: {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
