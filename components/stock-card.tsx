@@ -29,6 +29,15 @@ interface StockData {
     beta: number | string
     dividend: number | string
   }
+  debug?: {
+    fundamentalsSource: "yahoo" | "fmp"
+    fmpStatus: number | null
+    fmpProfile: {
+      pe?: number
+      beta?: number
+      lastDiv?: number
+    } | null
+  }
 }
 
 async function fetchStockData(symbol: string): Promise<StockData> {
@@ -36,7 +45,11 @@ async function fetchStockData(symbol: string): Promise<StockData> {
   if (!response.ok) {
     throw new Error("Erreur lors de la récupération des données")
   }
-  return response.json()
+  const data = (await response.json()) as StockData
+  if (data.debug) {
+    console.info("[stocks] API debug", { symbol, ...data.debug })
+  }
+  return data
 }
 
 export function StockCard({ symbol, name, onRemove }: StockCardProps) {

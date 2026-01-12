@@ -49,6 +49,11 @@ interface FmpProfile {
   lastDiv?: number
 }
 
+interface FmpResult {
+  profile: FmpProfile | null
+  status: number | null
+}
+
 function getDateNMonthsAgo(n: number): Date {
   const date = new Date()
   date.setMonth(date.getMonth() - n)
@@ -102,9 +107,12 @@ function normalizeDividend(value: number | undefined): number | null {
   return value
 }
 
-async function fetchFmpFundamentals(symbol: string): Promise<FmpProfile | null> {
+async function fetchFmpFundamentals(symbol: string): Promise<FmpResult> {
   const apiKey = process.env.FMP_API_KEY
-  if (!apiKey) return null
+  if (!apiKey) {
+    console.info("[stocks] FMP_API_KEY missing, skipping FMP lookup")
+    return { profile: null, status: null }
+  }
 
   const url = `https://financialmodelingprep.com/stable/profile?symbol=${encodeURIComponent(
     symbol,
@@ -115,10 +123,13 @@ async function fetchFmpFundamentals(symbol: string): Promise<FmpProfile | null> 
     },
   })
 
-  if (!response.ok) return null
+  if (!response.ok) {
+    console.info("[stocks] FMP response not ok", { symbol, status: response.status })
+    return { profile: null, status: response.status }
+  }
 
   const data = (await response.json()) as FmpProfile[]
-  return data[0] ?? null
+  return { profile: data[0] ?? null, status: response.status }
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ symbol: string }> }) {
@@ -155,6 +166,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
     let trailingPE: number | string = "N/A"
     let beta: number | string = "N/A"
     let dividend: number | string = "N/A"
+    let fundamentalsSource: "yahoo" | "fmp" = "yahoo"
 
     if (summaryResponse.ok) {
       const summaryData: YahooQuoteSummaryResult = await summaryResponse.json()
@@ -171,20 +183,26 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       dividend = dividendValue ?? "N/A"
     }
 
-    if (trailingPE === "N/A" || beta === "N/A" || dividend === "N/A") {
-      const fmpProfile = await fetchFmpFundamentals(symbol)
-      if (fmpProfile) {
-        if (trailingPE === "N/A") {
-          trailingPE = normalizeMetric(fmpProfile.pe) ?? "N/A"
-        }
-        if (beta === "N/A") {
-          beta = normalizeMetric(fmpProfile.beta) ?? "N/A"
-        }
-        if (dividend === "N/A") {
-          dividend = normalizeDividend(fmpProfile.lastDiv) ?? "N/A"
-        }
-      }
+    const fmpResult = await fetchFmpFundamentals(symbol)
+    if (fmpResult.profile) {
+      const fmpPe = normalizeMetric(fmpResult.profile.pe)
+      const fmpBeta = normalizeMetric(fmpResult.profile.beta)
+      const fmpDividend = normalizeDividend(fmpResult.profile.lastDiv)
+
+      trailingPE = fmpPe ?? trailingPE
+      beta = fmpBeta ?? beta
+      dividend = fmpDividend ?? dividend
+
+      fundamentalsSource = "fmp"
     }
+
+    console.info("[stocks] Fundamentals debug", {
+      symbol,
+      fundamentalsSource,
+      yahoo: { trailingPE, beta, dividend },
+      fmpStatus: fmpResult.status,
+      fmpProfile: fmpResult.profile,
+    })
 
     const result = data.chart.result?.[0]
     if (!result || !result.timestamp || !result.indicators.quote[0]) {
@@ -257,6 +275,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
         trailingPE,
         beta,
         dividend,
+      },
+      debug: {
+        fundamentalsSource,
+        fmpStatus: fmpResult.status,
+        fmpProfile: fmpResult.profile,
       },
     })
   } catch (error) {
