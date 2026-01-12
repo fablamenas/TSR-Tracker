@@ -24,6 +24,23 @@ interface YahooChartResult {
   }
 }
 
+interface YahooQuoteSummaryResult {
+  quoteSummary: {
+    result?: Array<{
+      summaryDetail?: {
+        trailingPE?: number
+        beta?: number
+        dividendRate?: number
+        lastDividendValue?: number
+      }
+    }>
+    error?: {
+      code: string
+      description: string
+    }
+  }
+}
+
 function getDateNMonthsAgo(n: number): Date {
   const date = new Date()
   date.setMonth(date.getMonth() - n)
@@ -72,22 +89,42 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
 
   try {
     // Fetch 1 year of data for rolling quarterly periods
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1y&interval=1d&events=div`
+    const chartUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1y&interval=1d&events=div`
+    const summaryUrl = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=summaryDetail`
 
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      },
-    })
+    const [chartResponse, summaryResponse] = await Promise.all([
+      fetch(chartUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+      }),
+      fetch(summaryUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+      }),
+    ])
 
-    if (!response.ok) {
-      throw new Error(`Yahoo Finance API error: ${response.status}`)
+    if (!chartResponse.ok) {
+      throw new Error(`Yahoo Finance API error: ${chartResponse.status}`)
     }
 
-    const data: YahooChartResult = await response.json()
+    const data: YahooChartResult = await chartResponse.json()
 
     if (data.chart.error) {
       throw new Error(data.chart.error.description)
+    }
+
+    let trailingPE: number | null = null
+    let beta: number | null = null
+    let dividend: number | null = null
+
+    if (summaryResponse.ok) {
+      const summaryData: YahooQuoteSummaryResult = await summaryResponse.json()
+      const summaryDetail = summaryData.quoteSummary.result?.[0]?.summaryDetail
+      trailingPE = summaryDetail?.trailingPE ?? null
+      beta = summaryDetail?.beta ?? null
+      dividend = summaryDetail?.lastDividendValue ?? summaryDetail?.dividendRate ?? null
     }
 
     const result = data.chart.result?.[0]
@@ -157,6 +194,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       sparkline: sparklineData,
       currentPrice: Math.round(latestPrice * 100) / 100,
       currency: result.meta.currency || "EUR",
+      fundamentals: {
+        trailingPE,
+        beta,
+        dividend,
+      },
     })
   } catch (error) {
     console.error(`Error fetching data for ${symbol}:`, error)

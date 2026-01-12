@@ -24,6 +24,11 @@ interface StockData {
   sparkline: number[]
   currentPrice: number
   currency: string
+  fundamentals: {
+    trailingPE: number | null
+    beta: number | null
+    dividend: number | null
+  }
 }
 
 async function fetchStockData(symbol: string): Promise<StockData> {
@@ -39,6 +44,31 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
   })
+
+  const currencySymbol = (currency: string) => {
+    switch (currency) {
+      case "EUR":
+        return "€"
+      case "USD":
+        return "$"
+      case "GBP":
+        return "£"
+      default:
+        return currency
+    }
+  }
+
+  const formatNumber = (value: number | null, digits = 1) => {
+    if (value == null || Number.isNaN(value)) return "--"
+    return value.toFixed(digits)
+  }
+
+  const perBadgeClass = (value: number | null) => {
+    if (value == null || Number.isNaN(value)) return "border-border text-muted-foreground"
+    if (value < 15) return "border-emerald-500/40 text-emerald-600"
+    if (value > 25) return "border-orange-500/40 text-orange-600"
+    return "border-border text-muted-foreground"
+  }
 
   return (
     <Card className="bg-card border-border overflow-hidden">
@@ -106,10 +136,24 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
 
           {data && (
             <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <span className={`px-2 py-1 rounded-full border ${perBadgeClass(data.fundamentals.trailingPE)}`}>
+                  PER {formatNumber(data.fundamentals.trailingPE, 1)}
+                </span>
+                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground">
+                  β {formatNumber(data.fundamentals.beta, 2)}
+                </span>
+                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground">
+                  Div{" "}
+                  {data.fundamentals.dividend == null || Number.isNaN(data.fundamentals.dividend)
+                    ? "--"
+                    : `${formatNumber(data.fundamentals.dividend, 2)}${currencySymbol(data.currency)}`}
+                </span>
+              </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <TrendingUp className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wider">TSR by 3m period</span>
+                  <span className="text-xs font-medium uppercase tracking-wider">Momentum (3m)</span>
                 </div>
                 <div className="flex items-center gap-3">
                   {data.rollingTsr.map((item) => (
@@ -120,7 +164,7 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <TrendingUp className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wider">TSR to-date</span>
+                  <span className="text-xs font-medium uppercase tracking-wider">Performance</span>
                 </div>
                 <div className="flex items-center gap-3">
                   {data.toDateTsr.map((item) => (
