@@ -103,53 +103,13 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
   return (
     <Card className="bg-card border-border overflow-hidden">
       <CardContent className="p-0">
-        <div className="flex flex-col gap-3 p-4 border-b border-border/50 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
+        <div className="flex flex-col gap-3 p-4 border-b border-border/50">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col">
               <span className="text-xl font-bold text-foreground tracking-tight">{name}</span>
               <span className="text-sm text-muted-foreground">{symbol}</span>
             </div>
-            {data && (
-              <div className="flex items-center gap-4">
-                <div className="text-left">
-                  <span className="text-lg font-semibold text-foreground">{data.currentPrice.toFixed(2)}</span>
-                  <span className="text-xs text-muted-foreground ml-1">{data.currency}</span>
-                </div>
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">30j</span>
-                  <Sparkline data={data.sparkline} />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex w-full items-center justify-between md:w-auto md:justify-end md:gap-4">
-            {data && (
-              <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground md:flex-nowrap">
-                <span
-                  className="px-2 py-1 rounded-full border border-border text-muted-foreground"
-                  title="Dividende annuel par action"
-                >
-                  Div{" "}
-                  {isNumberValue(data.fundamentals.dividend)
-                    ? `${formatNumber(data.fundamentals.dividend, 2)}${currencySymbol(data.currency)}`
-                    : "-"}
-                </span>
-                <span
-                  className={`px-2 py-1 rounded-full border ${dividendYieldBadgeClass(data.fundamentals.dividendYield)}`}
-                  title="Dividend yield (dividende annuel / cours) en %"
-                >
-                  Yield{" "}
-                  {isNumberValue(data.fundamentals.dividendYield)
-                    ? `${formatNumber(data.fundamentals.dividendYield, 2)}%`
-                    : "-"}
-                </span>
-                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground" title="Bêta">
-                  β {formatNumber(data.fundamentals.beta, 2)}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
@@ -167,6 +127,49 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            {data && (
+              <div className="flex items-center gap-4">
+                <div className="text-left">
+                  <span className="text-lg font-semibold text-foreground">{data.currentPrice.toFixed(2)}</span>
+                  <span className="text-xs text-muted-foreground ml-1">{data.currency}</span>
+                </div>
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">30j</span>
+                  <Sparkline data={data.sparkline} />
+                </div>
+              </div>
+            )}
+
+            {data && (
+              <div className="flex w-full justify-end">
+                <div className="flex flex-wrap items-center justify-end gap-2 text-[11px] text-muted-foreground">
+                  <span
+                    className="px-2 py-1 rounded-full border border-border text-muted-foreground"
+                    title="Dividende annuel par action"
+                  >
+                    Div{" "}
+                    {isNumberValue(data.fundamentals.dividend)
+                      ? `${formatNumber(data.fundamentals.dividend, 2)}${currencySymbol(data.currency)}`
+                      : "-"}
+                  </span>
+                  <span
+                    className={`px-2 py-1 rounded-full border ${dividendYieldBadgeClass(data.fundamentals.dividendYield)}`}
+                    title="Dividend yield (dividende annuel / cours) en %"
+                  >
+                    Yield{" "}
+                    {isNumberValue(data.fundamentals.dividendYield)
+                      ? `${formatNumber(data.fundamentals.dividendYield, 2)}%`
+                      : "-"}
+                  </span>
+                  <span className="px-2 py-1 rounded-full border border-border text-muted-foreground" title="Bêta">
+                    β {formatNumber(data.fundamentals.beta, 2)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
