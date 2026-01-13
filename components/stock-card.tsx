@@ -103,8 +103,8 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
   return (
     <Card className="bg-card border-border overflow-hidden">
       <CardContent className="p-0">
-        <div className="flex items-center justify-between p-4 border-b border-border/50 gap-4">
-          <div className="flex items-center gap-6">
+        <div className="flex flex-col gap-3 p-4 border-b border-border/50 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
             <div className="flex flex-col">
               <span className="text-xl font-bold text-foreground tracking-tight">{name}</span>
               <span className="text-sm text-muted-foreground">{symbol}</span>
@@ -123,9 +123,9 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
             )}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex w-full items-center justify-between md:w-auto md:justify-end md:gap-4">
             {data && (
-              <div className="flex items-center justify-end gap-2 text-[11px] text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground md:flex-nowrap">
                 <span
                   className="px-2 py-1 rounded-full border border-border text-muted-foreground"
                   title="Dividende annuel par action"
@@ -189,25 +189,35 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
 
           {data && (
             <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <TrendingUp className="h-4 w-4" />
                   <span className="text-xs font-medium uppercase tracking-wider">Momentum (3m)</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex w-full flex-wrap gap-3 md:w-auto md:flex-nowrap">
                   {data.rollingTsr.map((item) => (
-                    <TSRBadge key={item.period} period={item.period} value={item.tsr} />
+                    <TSRBadge
+                      key={item.period}
+                      period={item.period}
+                      value={item.tsr}
+                      className="flex-1 md:flex-none"
+                    />
                   ))}
                 </div>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <TrendingUp className="h-4 w-4" />
                   <span className="text-xs font-medium uppercase tracking-wider">Performance</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex w-full flex-wrap gap-3 md:w-auto md:flex-nowrap">
                   {data.toDateTsr.map((item) => (
-                    <TSRBadge key={item.period} period={item.period} value={item.tsr} />
+                    <TSRBadge
+                      key={item.period}
+                      period={item.period}
+                      value={item.tsr}
+                      className="flex-1 md:flex-none"
+                    />
                   ))}
                 </div>
               </div>
