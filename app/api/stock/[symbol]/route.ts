@@ -56,6 +56,7 @@ interface FmpResult {
   status: number | null
   hasApiKey: boolean
   requestUrl: string | null
+  message?: string | null
 }
 
 function getDateNMonthsAgo(n: number): Date {
@@ -137,8 +138,9 @@ async function fetchFmpFundamentals(symbol: string, apiKey: string | null): Prom
   })
 
   if (!response.ok) {
-    console.info("[stocks] FMP response not ok", { symbol, status: response.status, url: maskedUrl })
-    return { profile: null, status: response.status, hasApiKey: true, requestUrl: maskedUrl }
+    console.warn("[stocks] FMP response not ok", { symbol, status: response.status, url: maskedUrl })
+    const message = response.status === 429 ? "FMP Rate Limit exceeded (429). Please upgrade or wait." : `FMP Error: ${response.status}`
+    return { profile: null, status: response.status, hasApiKey: true, requestUrl: maskedUrl, message }
   }
 
   const data = (await response.json()) as FmpProfile[]
@@ -314,6 +316,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
         fmpUrl: "https://financialmodelingprep.com/stable/profile?symbol=SYMBOL&apikey=REDACTED",
         fmpHasApiKey: fmpResult.hasApiKey,
         fmpRequestUrl: fmpResult.requestUrl,
+        fmpMessage: fmpResult.message || null,
       },
     })
   } catch (error) {
