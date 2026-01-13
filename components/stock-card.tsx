@@ -111,11 +111,14 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
             </div>
             {data && (
               <div className="flex items-center gap-4">
-                <div className="text-left">
+                <div className="text-left" title="Cours actuel de l'action">
                   <span className="text-lg font-semibold text-foreground">{data.currentPrice.toFixed(2)}</span>
                   <span className="text-xs text-muted-foreground ml-1">{data.currency}</span>
                 </div>
-                <div className="flex flex-col items-center gap-0.5">
+                <div
+                  className="flex flex-col items-center gap-0.5"
+                  title="Évolution du cours sur 30 jours (sparkline)"
+                >
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wider">30j</span>
                   <Sparkline data={data.sparkline} />
                 </div>
@@ -128,7 +131,7 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
               <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground md:flex-nowrap">
                 <span
                   className="px-2 py-1 rounded-full border border-border text-muted-foreground"
-                  title="Dividende annuel par action"
+                  title="Dividende annuel par action (montant versé sur 12 mois)"
                 >
                   Div{" "}
                   {isNumberValue(data.fundamentals.dividend)
@@ -137,14 +140,17 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
                 </span>
                 <span
                   className={`px-2 py-1 rounded-full border ${dividendYieldBadgeClass(data.fundamentals.dividendYield)}`}
-                  title="Dividend yield (dividende annuel / cours) en %"
+                  title="Rendement du dividende = dividende annuel / cours de l'action (en %)"
                 >
                   Yield{" "}
                   {isNumberValue(data.fundamentals.dividendYield)
                     ? `${formatNumber(data.fundamentals.dividendYield, 2)}%`
                     : "-"}
                 </span>
-                <span className="px-2 py-1 rounded-full border border-border text-muted-foreground" title="Bêta">
+                <span
+                  className="px-2 py-1 rounded-full border border-border text-muted-foreground"
+                  title="Bêta : sensibilité du titre aux variations du marché (1 = marché)"
+                >
                   β {formatNumber(data.fundamentals.beta, 2)}
                 </span>
               </div>
