@@ -110,7 +110,7 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
               <span className="text-sm text-muted-foreground">{symbol}</span>
             </div>
             {data && (
-              <div className="flex items-center gap-4">
+              <div className="hidden md:flex items-center gap-4">
                 <div className="text-left" title="Cours actuel de l'action">
                   <span className="text-lg font-semibold text-foreground">{data.currentPrice.toFixed(2)}</span>
                   <span className="text-xs text-muted-foreground ml-1">{data.currency}</span>
@@ -128,7 +128,7 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
 
           <div className="flex w-full items-center justify-between md:w-auto md:justify-end md:gap-4">
             {data && (
-              <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground md:flex-nowrap">
+              <div className="hidden md:flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground md:flex-nowrap">
                 <span
                   className="px-2 py-1 rounded-full border border-border text-muted-foreground"
                   title="Dividende annuel par action (montant versé sur 12 mois)"
@@ -175,7 +175,7 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-3 md:hidden">
             {data && (
               <div className="flex items-center gap-4">
                 <div className="text-left">
