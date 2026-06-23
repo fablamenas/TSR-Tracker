@@ -25,9 +25,10 @@ interface StockData {
   currentPrice: number
   currency: string
   fundamentals: {
+    pe: number | string
+    peg: number | string
     dividendYield: number | string
     beta: number | string
-    dividend: number | string
   }
   debug?: {
     fundamentalsSource: "yahoo" | "fmp"
@@ -35,6 +36,7 @@ interface StockData {
     fmpProfile: {
       pe?: number
       peRatio?: number
+      pegRatio?: number
       beta?: number
       lastDiv?: number
       lastDividend?: number
@@ -72,19 +74,6 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
   })
-
-  const currencySymbol = (currency: string) => {
-    switch (currency) {
-      case "EUR":
-        return "€"
-      case "USD":
-        return "$"
-      case "GBP":
-        return "£"
-      default:
-        return currency
-    }
-  }
 
   const formatNumber = (value: number | string, digits = 1) => {
     if (typeof value === "string" || value == null || Number.isNaN(value)) return "-"
@@ -130,18 +119,21 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
                 <div className="flex items-center justify-end gap-2 text-[11px] text-muted-foreground">
                   <span
                     className="px-2 py-1 rounded-full border border-border text-muted-foreground"
-                    title="Dividende annuel par action (montant versé sur 12 mois)"
+                    title="PER (Price Earnings Ratio) : prix de l'action / bénéfice par action"
                   >
-                    Div{" "}
-                    {isNumberValue(data.fundamentals.dividend)
-                      ? `${formatNumber(data.fundamentals.dividend, 2)}${currencySymbol(data.currency)}`
-                      : "-"}
+                    PER {formatNumber(data.fundamentals.pe, 2)}
+                  </span>
+                  <span
+                    className="px-2 py-1 rounded-full border border-border text-muted-foreground"
+                    title="PEG : PER rapporté à la croissance attendue des bénéfices"
+                  >
+                    PEG {formatNumber(data.fundamentals.peg, 2)}
                   </span>
                   <span
                     className={`px-2 py-1 rounded-full border ${dividendYieldBadgeClass(data.fundamentals.dividendYield)}`}
                     title="Rendement du dividende = dividende annuel / cours de l'action (en %)"
                   >
-                    Yield{" "}
+                    D. Yield{" "}
                     {isNumberValue(data.fundamentals.dividendYield)
                       ? `${formatNumber(data.fundamentals.dividendYield, 2)}%`
                       : "-"}
@@ -218,18 +210,21 @@ export function StockCard({ symbol, name, onRemove }: StockCardProps) {
                 <div className="flex flex-wrap items-center justify-end gap-2 text-[11px] text-muted-foreground">
                   <span
                     className="px-2 py-1 rounded-full border border-border text-muted-foreground"
-                    title="Dividende annuel par action"
+                    title="PER (Price Earnings Ratio)"
                   >
-                    Div{" "}
-                    {isNumberValue(data.fundamentals.dividend)
-                      ? `${formatNumber(data.fundamentals.dividend, 2)}${currencySymbol(data.currency)}`
-                      : "-"}
+                    PER {formatNumber(data.fundamentals.pe, 2)}
+                  </span>
+                  <span
+                    className="px-2 py-1 rounded-full border border-border text-muted-foreground"
+                    title="PEG : PER rapporté à la croissance attendue des bénéfices"
+                  >
+                    PEG {formatNumber(data.fundamentals.peg, 2)}
                   </span>
                   <span
                     className={`px-2 py-1 rounded-full border ${dividendYieldBadgeClass(data.fundamentals.dividendYield)}`}
                     title="Dividend yield (dividende annuel / cours) en %"
                   >
-                    Yield{" "}
+                    D. Yield{" "}
                     {isNumberValue(data.fundamentals.dividendYield)
                       ? `${formatNumber(data.fundamentals.dividendYield, 2)}%`
                       : "-"}

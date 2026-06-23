@@ -35,6 +35,9 @@ interface YahooQuoteSummaryResult {
         lastDividendValue?: number
         trailingAnnualDividendRate?: number
       }
+      defaultKeyStatistics?: {
+        pegRatio?: number
+      }
     }>
     error?: {
       code: string
@@ -46,6 +49,7 @@ interface YahooQuoteSummaryResult {
 interface FmpProfile {
   pe?: number
   peRatio?: number
+  pegRatio?: number
   beta?: number
   lastDiv?: number
   lastDividend?: number
@@ -157,7 +161,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
   try {
     // Fetch 1 year of data for rolling quarterly periods
     const chartUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1y&interval=1d&events=div`
-    const summaryUrl = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=summaryDetail`
+    const summaryUrl = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=summaryDetail,defaultKeyStatistics`
 
     const [chartResponse, summaryResponse] = await Promise.all([
       fetch(chartUrl, {
@@ -183,6 +187,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
     }
 
     let trailingPE: number | string = "N/A"
+    let pegRatio: number | string = "N/A"
     let beta: number | string = "N/A"
     let dividend: number | string = "N/A"
     let dividendYield: number | string = "N/A"
@@ -190,8 +195,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
 
     if (summaryResponse.ok) {
       const summaryData: YahooQuoteSummaryResult = await summaryResponse.json()
-      const summaryDetail = summaryData.quoteSummary.result?.[0]?.summaryDetail
+      const summaryResult = summaryData.quoteSummary.result?.[0]
+      const summaryDetail = summaryResult?.summaryDetail
+      const defaultKeyStatistics = summaryResult?.defaultKeyStatistics
       const peValue = normalizeMetric(summaryDetail?.trailingPE) ?? normalizeMetric(summaryDetail?.forwardPE)
+      const pegValue = normalizeMetric(defaultKeyStatistics?.pegRatio)
       const betaValue = normalizeMetric(summaryDetail?.beta)
       const dividendValue =
         normalizeDividend(summaryDetail?.dividendRate) ??
@@ -199,6 +207,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
         normalizeDividend(summaryDetail?.lastDividendValue)
 
       trailingPE = peValue ?? "N/A"
+      pegRatio = pegValue ?? "N/A"
       beta = betaValue ?? "N/A"
       dividend = dividendValue ?? "N/A"
     }
@@ -212,10 +221,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
     const fmpResult = await fetchFmpFundamentals(symbol, resolvedApiKey)
     if (fmpResult.profile) {
       const fmpPe = normalizeMetric(fmpResult.profile.pe ?? fmpResult.profile.peRatio)
+      const fmpPeg = normalizeMetric(fmpResult.profile.pegRatio)
       const fmpBeta = normalizeMetric(fmpResult.profile.beta)
       const fmpDividend = normalizeDividend(fmpResult.profile.lastDividend ?? fmpResult.profile.lastDiv)
 
       trailingPE = fmpPe ?? trailingPE
+      pegRatio = fmpPeg ?? pegRatio
       beta = fmpBeta ?? beta
       dividend = fmpDividend ?? dividend
 
@@ -225,7 +236,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
     console.info("[stocks] Fundamentals debug", {
       symbol,
       fundamentalsSource,
-      yahoo: { trailingPE, beta, dividend },
+      yahoo: { trailingPE, pegRatio, beta, dividend },
       fmpStatus: fmpResult.status,
       fmpProfile: fmpResult.profile,
       fmpHasApiKey: fmpResult.hasApiKey,
@@ -303,9 +314,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ symb
       currentPrice: Math.round(latestPrice * 100) / 100,
       currency: result.meta.currency || "EUR",
       fundamentals: {
+        pe: trailingPE,
+        peg: pegRatio,
         dividendYield,
         beta,
-        dividend,
       },
       debug: {
         fundamentalsSource,
